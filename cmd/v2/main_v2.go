@@ -144,31 +144,11 @@ func (s *StreamAnalyzer) Analyze() error {
 	}
 	s.fileSize = fileInfo.Size()
 
-	if s.ShowProgress {
-		fmt.Printf("开始分析RDB文件: %s (大小: %.2f GB)\n",
-			s.InputFile, float64(s.fileSize)/(1024*1024*1024))
-		fmt.Printf("分析模式: %s\n", s.Mode)
+	// 开始分析前打印日志
+	s.beforeAdbAnalyzePrint()
 
-		if s.Mode == "bigkey" || s.Mode == "both" || s.Mode == "all" {
-			fmt.Printf("大Key分析 | 阈值: %dKB\n", s.ThresholdKB)
-		}
-
-		if s.Mode == "prefix" || s.Mode == "both" || s.Mode == "all" {
-			fmt.Printf("前缀分析 | 最大深度: %d | TopN: %d\n", s.PrefixDepth, s.TopN)
-		}
-
-		if s.Mode == "flame" || s.Mode == "all" {
-			fmt.Printf("火焰图分析 | 深度: %d | 格式: %s\n", s.FlameDepth, s.FlameFormat)
-		}
-
-		fmt.Printf("键分隔符: '%s'\n", s.Separator)
-		fmt.Printf("跳过错误: %v\n", s.SkipErrors)
-	}
-
-	// 运行内存监控
-	if s.ShowProgress {
-		go s.monitorMemory()
-	}
+	// 开启单独的线程运行内存监控
+	go s.monitorMemory()
 
 	// 创建解析器
 	decoder := parser.NewDecoder(file)
@@ -179,7 +159,8 @@ func (s *StreamAnalyzer) Analyze() error {
 		defer func() {
 			if r := recover(); r != nil {
 				s.errorCount++
-				if s.ShowProgress && s.errorCount <= 10 { // 只显示前10个错误
+				if s.errorCount <= 10 {
+					// 只显示前10个错误
 					fmt.Printf("\n[警告] 处理Key时发生panic: %v\n", r)
 				}
 				if s.errorCount > 100 && !s.SkipErrors {
@@ -190,8 +171,8 @@ func (s *StreamAnalyzer) Analyze() error {
 
 		s.totalKeys++
 
-		// 每处理 10000个 key 显示进度
-		if s.ShowProgress && s.totalKeys%10000 == 0 {
+		// 每处理 10000个 key 显示进度（当配置需要展示进度时候）
+		if s.totalKeys%10000 == 0 {
 			elapsed := time.Since(s.startTime)
 			rate := float64(s.totalKeys) / elapsed.Seconds()
 			memStats := s.getMemoryUsage()
@@ -205,8 +186,9 @@ func (s *StreamAnalyzer) Analyze() error {
 		// 解析 key
 		analysis, err := s.parseObjectSafe(o)
 		if err != nil {
+			// 继续处理下一个
 			s.skippedKeys++
-			return true // 继续处理下一个
+			return true
 		}
 
 		// 更新总大小
@@ -244,11 +226,31 @@ func (s *StreamAnalyzer) Analyze() error {
 		return fmt.Errorf("解析 RDB 文件失败: %v", err)
 	}
 
-	if s.ShowProgress {
-		fmt.Println() // 换行
-	}
+	fmt.Println()
 
 	return nil
+}
+
+// beforeAdbAnalyzePrint 开始前的日志打印工作
+func (s *StreamAnalyzer) beforeAdbAnalyzePrint() {
+	fmt.Printf("开始分析RDB文件: %s (大小: %.2f GB)\n",
+		s.InputFile, float64(s.fileSize)/(1024*1024*1024))
+	fmt.Printf("分析模式: %s\n", s.Mode)
+
+	if s.Mode == "bigkey" || s.Mode == "both" || s.Mode == "all" {
+		fmt.Printf("大Key分析 | 阈值: %dKB\n", s.ThresholdKB)
+	}
+
+	if s.Mode == "prefix" || s.Mode == "both" || s.Mode == "all" {
+		fmt.Printf("前缀分析 | 最大深度: %d | TopN: %d\n", s.PrefixDepth, s.TopN)
+	}
+
+	if s.Mode == "flame" || s.Mode == "all" {
+		fmt.Printf("火焰图分析 | 深度: %d | 格式: %s\n", s.FlameDepth, s.FlameFormat)
+	}
+
+	fmt.Printf("键分隔符: '%s'\n", s.Separator)
+	fmt.Printf("跳过错误: %v\n", s.SkipErrors)
 }
 
 // 安全关闭文件
