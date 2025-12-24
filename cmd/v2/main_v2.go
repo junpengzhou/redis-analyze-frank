@@ -99,9 +99,9 @@ func NewStreamAnalyzer(config Config) *StreamAnalyzer {
 		config.FlameDepth = 5
 	}
 
-	// 设置默认火焰图最小值
+	// 设置默认火焰图最小值 1024
 	if config.FlameMinValue <= 0 {
-		config.FlameMinValue = 1024 // 1KB
+		config.FlameMinValue = 1024
 	}
 
 	// 设置默认火焰图格式
