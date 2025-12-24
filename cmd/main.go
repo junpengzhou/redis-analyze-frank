@@ -80,11 +80,6 @@ func (s *StreamAnalyzer) Analyze() error {
 		fmt.Printf("阈值: %dKB\n", s.ThresholdKB)
 	}
 
-	// 运行内存监控
-	if s.ShowProgress {
-		s.monitorMemory()
-	}
-
 	// 创建解析器
 	decoder := parser.NewDecoder(file)
 
@@ -117,11 +112,12 @@ func (s *StreamAnalyzer) Analyze() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("解析RDB文件失败: %v", err)
+		return fmt.Errorf("解析 RDB 文件失败: %v", err)
 	}
 
 	if s.ShowProgress {
-		fmt.Println() // 换行
+		// 换行
+		fmt.Println()
 	}
 
 	return nil
