@@ -1,0 +1,1 @@
+go build -o build/frank cmd/main.go
