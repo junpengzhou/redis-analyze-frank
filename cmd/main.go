@@ -98,7 +98,8 @@ func (s *StreamAnalyzer) Analyze() error {
 		defer func() {
 			if r := recover(); r != nil {
 				s.errorCount++
-				if s.ShowProgress && s.errorCount <= 10 { // 只显示前10个错误
+				if s.ShowProgress && s.errorCount <= 10 {
+					// 只显示前10个错误
 					fmt.Printf("\n[警告] 处理Key时发生panic: %v\n", r)
 				}
 				if s.errorCount > 100 && !s.SkipErrors {
@@ -126,7 +127,8 @@ func (s *StreamAnalyzer) Analyze() error {
 			if s.ShowProgress && s.skippedKeys <= 5 {
 				fmt.Printf("\n[跳过] 无法解析Key: %v\n", err)
 			}
-			return true // 继续处理下一个
+			// 继续处理下一个
+			return true
 		}
 
 		if analysis.Size > int64(s.ThresholdKB*1024) {
@@ -152,7 +154,7 @@ func (s *StreamAnalyzer) Analyze() error {
 	return nil
 }
 
-// 安全地解析对象
+// parseObjectSafe 安全地解析对象
 func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, error) {
 	analysis := KeyAnalysis{
 		Database: o.GetDBIndex(),
