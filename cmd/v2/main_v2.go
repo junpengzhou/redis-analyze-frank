@@ -475,62 +475,47 @@ func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, err
 	// 根据类型计算大小
 	switch o.GetType() {
 	case parser.StringType:
-		if str, ok := o.(*parser.StringObject); ok {
-			analysis.Size = int64(len(str.Key) + len(str.Value))
-			analysis.Elements = 1
-			analysis.Encoding = str.Encoding
-		} else {
-			return analysis, fmt.Errorf("string 类型断言失败")
-		}
+		str := o.(*parser.StringObject)
+		analysis.Size = int64(len(str.Key) + len(str.Value))
+		analysis.Elements = 1
+		analysis.Encoding = str.Encoding
 
 	case parser.ListType:
-		if list, ok := o.(*parser.ListObject); ok {
-			analysis.Size = int64(len(list.Key))
-			for _, item := range list.Values {
-				analysis.Size += int64(len(item))
-			}
-			analysis.Elements = len(list.Values)
-			analysis.Encoding = list.Encoding
-		} else {
-			return analysis, fmt.Errorf("list 类型断言失败")
+		list := o.(*parser.ListObject)
+		analysis.Size = int64(len(list.Key))
+		for _, item := range list.Values {
+			analysis.Size += int64(len(item))
 		}
+		analysis.Elements = len(list.Values)
+		analysis.Encoding = list.Encoding
 
 	case parser.HashType:
-		if hash, ok := o.(*parser.HashObject); ok {
-			analysis.Size = int64(len(hash.Key))
-			for field, value := range hash.Hash {
-				analysis.Size += int64(len(field) + len(value))
-			}
-			analysis.Elements = len(hash.Hash)
-			analysis.Encoding = hash.Encoding
-		} else {
-			return analysis, fmt.Errorf("hash 类型断言失败")
+		hash := o.(*parser.HashObject)
+		analysis.Size = int64(len(hash.Key))
+		for field, value := range hash.Hash {
+			analysis.Size += int64(len(field) + len(value))
 		}
+		analysis.Elements = len(hash.Hash)
+		analysis.Encoding = hash.Encoding
 
 	case parser.SetType:
-		if set, ok := o.(*parser.SetObject); ok {
-			analysis.Size = int64(len(set.Key))
-			for _, member := range set.Members {
-				analysis.Size += int64(len(member))
-			}
-			analysis.Elements = len(set.Members)
-			analysis.Encoding = set.Encoding
-		} else {
-			return analysis, fmt.Errorf("set 类型断言失败")
+		set := o.(*parser.SetObject)
+		analysis.Size = int64(len(set.Key))
+		for _, member := range set.Members {
+			analysis.Size += int64(len(member))
 		}
+		analysis.Elements = len(set.Members)
+		analysis.Encoding = set.Encoding
 
 	case parser.ZSetType:
-		if zset, ok := o.(*parser.ZSetObject); ok {
-			analysis.Size = int64(len(zset.Key))
-			for _, entry := range zset.Entries {
-				// 8字节是 score 的空间
-				analysis.Size += int64(len(entry.Member) + 8)
-			}
-			analysis.Elements = len(zset.Entries)
-			analysis.Encoding = zset.Encoding
-		} else {
-			return analysis, fmt.Errorf("zset 类型断言失败")
+		zset := o.(*parser.ZSetObject)
+		analysis.Size = int64(len(zset.Key))
+		for _, entry := range zset.Entries {
+			// 8字节是 score 的空间
+			analysis.Size += int64(len(entry.Member) + 8)
 		}
+		analysis.Elements = len(zset.Entries)
+		analysis.Encoding = zset.Encoding
 
 	case parser.StreamType:
 		analysis.Size = 0
