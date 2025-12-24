@@ -474,7 +474,7 @@ func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, err
 
 	// 根据类型计算大小
 	switch o.GetType() {
-	case "string":
+	case parser.StringType:
 		if str, ok := o.(*parser.StringObject); ok {
 			analysis.Size = int64(len(str.Key) + len(str.Value))
 			analysis.Elements = 1
@@ -483,7 +483,7 @@ func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, err
 			return analysis, fmt.Errorf("string 类型断言失败")
 		}
 
-	case "list":
+	case parser.ListType:
 		if list, ok := o.(*parser.ListObject); ok {
 			analysis.Size = int64(len(list.Key))
 			for _, item := range list.Values {
@@ -495,7 +495,7 @@ func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, err
 			return analysis, fmt.Errorf("list 类型断言失败")
 		}
 
-	case "hash":
+	case parser.HashType:
 		if hash, ok := o.(*parser.HashObject); ok {
 			analysis.Size = int64(len(hash.Key))
 			for field, value := range hash.Hash {
@@ -507,7 +507,7 @@ func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, err
 			return analysis, fmt.Errorf("hash 类型断言失败")
 		}
 
-	case "set":
+	case parser.SetType:
 		if set, ok := o.(*parser.SetObject); ok {
 			analysis.Size = int64(len(set.Key))
 			for _, member := range set.Members {
@@ -519,11 +519,12 @@ func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, err
 			return analysis, fmt.Errorf("set 类型断言失败")
 		}
 
-	case "zset":
+	case parser.ZSetType:
 		if zset, ok := o.(*parser.ZSetObject); ok {
 			analysis.Size = int64(len(zset.Key))
 			for _, entry := range zset.Entries {
-				analysis.Size += int64(len(entry.Member) + 8) // 8字节给分数
+				// 8字节是 score 的空间
+				analysis.Size += int64(len(entry.Member) + 8)
 			}
 			analysis.Elements = len(zset.Entries)
 			analysis.Encoding = zset.Encoding
@@ -531,10 +532,9 @@ func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, err
 			return analysis, fmt.Errorf("zset 类型断言失败")
 		}
 
-	case "module", "module2", "stream":
-		// Redis 8.3 可能包含新类型，跳过但不报错
+	case parser.StreamType:
 		analysis.Size = 0
-		return analysis, fmt.Errorf("跳过未支持的类型: %s", o.GetType())
+		return analysis, fmt.Errorf("跳过流类型: %s", o.GetType())
 
 	default:
 		analysis.Size = 0
