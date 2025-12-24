@@ -1165,16 +1165,10 @@ func main() {
 	// 创建分析器
 	analyzer := NewStreamAnalyzer(config)
 
-	// 开始分析
-	fmt.Println("开始流式分析RDB文件...")
-	fmt.Printf("分析模式: %s\n", config.Mode)
-	if config.SkipErrors {
-		fmt.Println("如果遇到错误，程序会尝试跳过并继续处理...")
-	}
-
 	// 记录开始时间
 	startTime := time.Now()
 
+	// 执行分析器
 	if err := analyzer.Analyze(); err != nil {
 		log.Fatalf("分析失败: %v", err)
 	}
