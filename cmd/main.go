@@ -23,6 +23,7 @@ type Config struct {
 	KeyPattern   string
 	TypeFilter   string
 	ShowProgress bool
+	SkipErrors   bool
 }
 
 // KeyAnalysis 分析结果
@@ -40,11 +41,13 @@ type KeyAnalysis struct {
 // StreamAnalyzer 流式分析器
 type StreamAnalyzer struct {
 	Config
-	totalKeys int
-	bigKeys   []KeyAnalysis
-	startTime time.Time
-	bytesRead int64
-	fileSize  int64
+	totalKeys   int
+	bigKeys     []KeyAnalysis
+	startTime   time.Time
+	bytesRead   int64
+	fileSize    int64
+	errorCount  int
+	skippedKeys int
 }
 
 func NewStreamAnalyzer(config Config) *StreamAnalyzer {
@@ -78,27 +81,54 @@ func (s *StreamAnalyzer) Analyze() error {
 		fmt.Printf("开始分析RDB文件: %s (大小: %.2f GB)\n",
 			s.InputFile, float64(s.fileSize)/(1024*1024*1024))
 		fmt.Printf("阈值: %dKB\n", s.ThresholdKB)
+		fmt.Printf("跳过错误: %v\n", s.SkipErrors)
+	}
+
+	// 运行内存监控
+	if s.ShowProgress {
+		go s.monitorMemory()
 	}
 
 	// 创建解析器
 	decoder := parser.NewDecoder(file)
 
-	// 解析回调函数
+	// 使用安全的解析方法
 	err = decoder.Parse(func(o parser.RedisObject) bool {
+		// 使用 defer 恢复 panic
+		defer func() {
+			if r := recover(); r != nil {
+				s.errorCount++
+				if s.ShowProgress && s.errorCount <= 10 { // 只显示前10个错误
+					fmt.Printf("\n[警告] 处理Key时发生panic: %v\n", r)
+				}
+				if s.errorCount > 100 && !s.SkipErrors {
+					panic(fmt.Sprintf("发生过多错误(%d)，停止处理", s.errorCount))
+				}
+			}
+		}()
+
 		s.totalKeys++
 
 		// 每处理 10000个 key 显示进度
 		if s.ShowProgress && s.totalKeys%10000 == 0 {
-			progress := float64(s.bytesRead) / float64(s.fileSize) * 100
 			elapsed := time.Since(s.startTime)
 			rate := float64(s.totalKeys) / elapsed.Seconds()
+			memStats := getMemoryUsage()
 
-			fmt.Printf("\r进度: %.1f%% | 已处理: %d | 大Key: %d | 速度: %.0f keys/sec",
-				progress, s.totalKeys, len(s.bigKeys), rate)
+			fmt.Printf("\r进度: 已处理: %d | 大Key: %d | 速度: %.0f keys/sec | 内存: %.1fMB | 错误: %d | 跳过: %d",
+				s.totalKeys, len(s.bigKeys), rate, memStats.AllocMB, s.errorCount, s.skippedKeys)
 		}
 
 		// 解析 key
-		analysis := s.parseObject(o)
+		analysis, err := s.parseObjectSafe(o)
+		if err != nil {
+			s.skippedKeys++
+			if s.ShowProgress && s.skippedKeys <= 5 {
+				fmt.Printf("\n[跳过] 无法解析Key: %v\n", err)
+			}
+			return true // 继续处理下一个
+		}
+
 		if analysis.Size > int64(s.ThresholdKB*1024) {
 			s.bigKeys = append(s.bigKeys, analysis)
 
@@ -116,23 +146,23 @@ func (s *StreamAnalyzer) Analyze() error {
 	}
 
 	if s.ShowProgress {
-		// 换行
-		fmt.Println()
+		fmt.Println() // 换行
 	}
 
 	return nil
 }
 
-func (s *StreamAnalyzer) parseObject(o parser.RedisObject) KeyAnalysis {
+// 安全地解析对象
+func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, error) {
 	analysis := KeyAnalysis{
 		Database: o.GetDBIndex(),
 		Type:     o.GetType(),
 		Key:      o.GetKey(),
-		Expiry:   o.GetExpiration().Unix(),
 	}
 
-	// 计算过期时间
-	if analysis.Expiry > 0 {
+	// 安全地获取过期时间
+	if expiry := o.GetExpiration(); expiry != nil {
+		analysis.Expiry = expiry.Unix()
 		analysis.TTL = analysis.Expiry - time.Now().Unix()
 		if analysis.TTL < 0 {
 			analysis.TTL = 0
@@ -146,6 +176,8 @@ func (s *StreamAnalyzer) parseObject(o parser.RedisObject) KeyAnalysis {
 			analysis.Size = int64(len(str.Key) + len(str.Value))
 			analysis.Elements = 1
 			analysis.Encoding = str.Encoding
+		} else {
+			return analysis, fmt.Errorf("string 类型断言失败")
 		}
 
 	case "list":
@@ -156,6 +188,8 @@ func (s *StreamAnalyzer) parseObject(o parser.RedisObject) KeyAnalysis {
 			}
 			analysis.Elements = len(list.Values)
 			analysis.Encoding = list.Encoding
+		} else {
+			return analysis, fmt.Errorf("list 类型断言失败")
 		}
 
 	case "hash":
@@ -166,6 +200,8 @@ func (s *StreamAnalyzer) parseObject(o parser.RedisObject) KeyAnalysis {
 			}
 			analysis.Elements = len(hash.Hash)
 			analysis.Encoding = hash.Encoding
+		} else {
+			return analysis, fmt.Errorf("hash 类型断言失败")
 		}
 
 	case "set":
@@ -176,6 +212,8 @@ func (s *StreamAnalyzer) parseObject(o parser.RedisObject) KeyAnalysis {
 			}
 			analysis.Elements = len(set.Members)
 			analysis.Encoding = set.Encoding
+		} else {
+			return analysis, fmt.Errorf("set 类型断言失败")
 		}
 
 	case "zset":
@@ -187,10 +225,56 @@ func (s *StreamAnalyzer) parseObject(o parser.RedisObject) KeyAnalysis {
 			}
 			analysis.Elements = len(zset.Entries)
 			analysis.Encoding = zset.Encoding
+		} else {
+			return analysis, fmt.Errorf("zset 类型断言失败")
 		}
+
+	case "module", "module2", "stream":
+		// Redis 8.3 可能包含新类型，跳过但不报错
+		analysis.Size = 0
+		return analysis, fmt.Errorf("跳过未支持的类型: %s", o.GetType())
+
+	default:
+		analysis.Size = 0
+		return analysis, fmt.Errorf("未知类型: %s", o.GetType())
 	}
 
-	return analysis
+	return analysis, nil
+}
+
+// MemoryStats 获取内存使用情况
+type MemoryStats struct {
+	AllocMB   float64
+	TotalMB   float64
+	SysMB     float64
+	NumGC     uint32
+	HeapAlloc float64
+	HeapSys   float64
+}
+
+func getMemoryUsage() MemoryStats {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	return MemoryStats{
+		AllocMB:   float64(m.Alloc) / 1024 / 1024,
+		TotalMB:   float64(m.TotalAlloc) / 1024 / 1024,
+		SysMB:     float64(m.Sys) / 1024 / 1024,
+		NumGC:     m.NumGC,
+		HeapAlloc: float64(m.HeapAlloc) / 1024 / 1024,
+		HeapSys:   float64(m.HeapSys) / 1024 / 1024,
+	}
+}
+
+// 添加内存监控函数
+func (s *StreamAnalyzer) monitorMemory() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		memStats := getMemoryUsage()
+		fmt.Printf("\n[内存监控] Alloc=%.1fMB, Total=%.1fMB, Sys=%.1fMB, HeapAlloc=%.1fMB, GC次数=%d\n",
+			memStats.AllocMB, memStats.TotalMB, memStats.SysMB, memStats.HeapAlloc, memStats.NumGC)
+	}
 }
 
 func (s *StreamAnalyzer) SaveResults() error {
@@ -243,32 +327,35 @@ func (s *StreamAnalyzer) SaveResults() error {
 }
 
 func (s *StreamAnalyzer) sortBySize() {
-	// 简单的冒泡排序（对于少量数据足够）
-	for i := 0; i < len(s.bigKeys); i++ {
-		for j := i + 1; j < len(s.bigKeys); j++ {
-			if s.bigKeys[i].Size < s.bigKeys[j].Size {
-				s.bigKeys[i], s.bigKeys[j] = s.bigKeys[j], s.bigKeys[i]
-			}
-		}
+	// 使用快速排序优化性能
+	if len(s.bigKeys) < 2 {
+		return
+	}
+
+	// 使用标准库排序
+	quickSort(s.bigKeys, 0, len(s.bigKeys)-1)
+}
+
+func quickSort(arr []KeyAnalysis, low, high int) {
+	if low < high {
+		pi := partition(arr, low, high)
+		quickSort(arr, low, pi-1)
+		quickSort(arr, pi+1, high)
 	}
 }
 
-// 添加内存监控函数
-func (s *StreamAnalyzer) monitorMemory() {
-	go func() {
-		for {
-			var m runtime.MemStats
-			runtime.ReadMemStats(&m)
+func partition(arr []KeyAnalysis, low, high int) int {
+	pivot := arr[high].Size
+	i := low - 1
 
-			fmt.Printf("\r内存使用: Alloc=%vMB, TotalAlloc=%vMB, Sys=%vMB, NumGC=%v",
-				m.Alloc/1024/1024,
-				m.TotalAlloc/1024/1024,
-				m.Sys/1024/1024,
-				m.NumGC)
-
-			time.Sleep(5 * time.Second)
+	for j := low; j < high; j++ {
+		if arr[j].Size > pivot { // 降序排序
+			i++
+			arr[i], arr[j] = arr[j], arr[i]
 		}
-	}()
+	}
+	arr[i+1], arr[high] = arr[high], arr[i+1]
+	return i + 1
 }
 
 func (s *StreamAnalyzer) PrintSummary() {
@@ -282,6 +369,8 @@ func (s *StreamAnalyzer) PrintSummary() {
 	fmt.Printf("处理时间: %v\n", elapsed)
 	fmt.Printf("总Key数: %d\n", s.totalKeys)
 	fmt.Printf("大Key数(>%dKB): %d\n", s.ThresholdKB, len(s.bigKeys))
+	fmt.Printf("错误数: %d\n", s.errorCount)
+	fmt.Printf("跳过Key数: %d\n", s.skippedKeys)
 
 	if len(s.bigKeys) > 0 {
 		fmt.Println("\nTop 10 大Key:")
@@ -315,12 +404,13 @@ func main() {
 	outputFile := flag.String("output", "", "输出 CSV 文件路径")
 	thresholdKB := flag.Int("threshold", 3, "大 Key 阈值(单位：KB), 默认:3")
 	maxKeys := flag.Int("max", 10000, "最多记录的大 Key 数量, 默认:10000")
+	skipErrors := flag.Bool("skip-errors", true, "遇到错误时跳过而不是停止")
 
 	flag.Parse()
 
 	if *inputFile == "" {
 		fmt.Println("请输入 RDB 文件路径")
-		fmt.Println("用法: rdb-analyzer -input <rdb文件> -output <输出文件>")
+		fmt.Println("用法: rdb-analyzer -input <rdb文件> [-output <输出文件>] [-threshold <KB>] [-max <数量>] [-skip-errors]")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -343,8 +433,9 @@ func main() {
 		InputFile:    *inputFile,   // 输入 RDB 文件路径
 		OutputFile:   *outputFile,  // 输出文件路径
 		ThresholdKB:  *thresholdKB, // 阈值
-		MaxKeys:      *maxKeys,     // 最多记录的大 Key 数量, 我打算先找出top 100w 的
+		MaxKeys:      *maxKeys,     // 最多记录的大 Key 数量
 		ShowProgress: true,         // 显示进度
+		SkipErrors:   *skipErrors,  // 跳过错误
 	}
 
 	// 创建分析器
@@ -352,6 +443,7 @@ func main() {
 
 	// 开始分析
 	fmt.Println("开始流式分析RDB文件...")
+	fmt.Println("如果遇到错误，程序会尝试跳过并继续处理...")
 
 	// 记录开始时间
 	startTime := time.Now()
