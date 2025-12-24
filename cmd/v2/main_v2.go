@@ -455,7 +455,7 @@ func (s *StreamAnalyzer) buildPrefix(parts []string, depth int) string {
 	return strings.Join(prefixParts, s.Separator) + s.Separator
 }
 
-// 安全地解析对象
+// parseObjectSafe 安全地解析对象
 func (s *StreamAnalyzer) parseObjectSafe(o parser.RedisObject) (KeyAnalysis, error) {
 	analysis := KeyAnalysis{
 		Database: o.GetDBIndex(),
