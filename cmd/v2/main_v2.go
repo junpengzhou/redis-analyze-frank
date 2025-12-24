@@ -155,38 +155,16 @@ func (s *StreamAnalyzer) Analyze() error {
 
 	// 解析回调函数
 	err = decoder.Parse(func(o parser.RedisObject) bool {
-		// 使用 defer 恢复 panic
-		defer func() {
-			if r := recover(); r != nil {
-				s.errorCount++
-				if s.errorCount <= 10 {
-					// 只显示前10个错误
-					fmt.Printf("\n[警告] 处理Key时发生panic: %v\n", r)
-				}
-				if s.errorCount > 100 && !s.SkipErrors {
-					panic(fmt.Sprintf("发生过多错误(%d)，停止处理", s.errorCount))
-				}
-			}
-		}()
-
 		s.totalKeys++
 
 		// 每处理 10000个 key 显示进度（当配置需要展示进度时候）
 		if s.totalKeys%10000 == 0 {
-			elapsed := time.Since(s.startTime)
-			rate := float64(s.totalKeys) / elapsed.Seconds()
-			memStats := s.getMemoryUsage()
-
-			progressInfo := s.getProgressInfo()
-
-			fmt.Printf("\r进度: 已处理: %d | %s | 速度: %.0f keys/sec | 内存: %.1fMB | 错误: %d",
-				s.totalKeys, progressInfo, rate, memStats.AllocMB, s.errorCount)
+			s.printProgressInfo()
 		}
 
 		// 解析 key
 		analysis, err := s.parseObjectSafe(o)
 		if err != nil {
-			// 继续处理下一个
 			s.skippedKeys++
 			return true
 		}
@@ -200,12 +178,8 @@ func (s *StreamAnalyzer) Analyze() error {
 		// 大 Key 分析
 		if s.Mode == "bigkey" || s.Mode == "both" || s.Mode == "all" {
 			if analysis.Size > int64(s.ThresholdKB*1024) {
+				// 追加大 Key 到数据库
 				s.bigKeys = append(s.bigKeys, analysis)
-
-				// 如果达到最大数量限制，停止处理
-				if s.MaxKeys > 0 && len(s.bigKeys) >= s.MaxKeys {
-					return false
-				}
 			}
 		}
 
@@ -229,6 +203,18 @@ func (s *StreamAnalyzer) Analyze() error {
 	fmt.Println()
 
 	return nil
+}
+
+// printProgressInfo 打印进度
+func (s *StreamAnalyzer) printProgressInfo() {
+	elapsed := time.Since(s.startTime)
+	rate := float64(s.totalKeys) / elapsed.Seconds()
+	memStats := s.getMemoryUsage()
+
+	progressInfo := s.getProgressInfo()
+
+	fmt.Printf("\r进度: 已处理: %d | %s | 速度: %.0f keys/sec | 内存: %.1fMB | 错误: %d",
+		s.totalKeys, progressInfo, rate, memStats.AllocMB, s.errorCount)
 }
 
 // beforeAdbAnalyzePrint 开始前的日志打印工作
@@ -1079,7 +1065,6 @@ func main() {
 	flameOutputFile := flag.String("flame-output", "", "输出文件路径 (火焰图分析)")
 	mode := flag.String("mode", "all", "分析模式: bigkey, prefix, flame, both, all")
 	thresholdKB := flag.Int("threshold", 3, "大 Key 阈值(单位：KB), 默认:3")
-	maxKeys := flag.Int("max", 10000, "最多记录的大 Key 数量, 默认:10000")
 	prefixDepth := flag.Int("prefix-depth", 3, "前缀分析的最大深度, 默认:3")
 	topN := flag.Int("topn", 100, "前缀分析的TopN数量, 默认:100")
 	flameDepth := flag.Int("flame-depth", 5, "火焰图分析的最大深度, 默认:5")
@@ -1097,7 +1082,6 @@ func main() {
 		fmt.Println("\n大Key分析参数:")
 		fmt.Println("  -output <文件>       输出文件路径")
 		fmt.Println("  -threshold <KB>      大Key阈值(默认:3KB)")
-		fmt.Println("  -max <数量>          最大记录数(默认:10000)")
 		fmt.Println("\n前缀分析参数:")
 		fmt.Println("  -prefix-output <文件> 前缀输出文件路径")
 		fmt.Println("  -prefix-depth <深度>  前缀分析最大深度(默认:3)")
@@ -1180,7 +1164,6 @@ func main() {
 		InputFile:     *inputFile,
 		OutputFile:    *outputFile,
 		ThresholdKB:   *thresholdKB,
-		MaxKeys:       *maxKeys,
 		PrefixDepth:   *prefixDepth,
 		TopN:          *topN,
 		ShowProgress:  true,
