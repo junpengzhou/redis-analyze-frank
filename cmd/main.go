@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -313,13 +314,41 @@ func (s *StreamAnalyzer) PrintSummary() {
 }
 
 func main() {
+	// 命令行参数
+	inputFile := flag.String("input", "", "输入 RDB 文件路径")
+	outputFile := flag.String("output", "", "输出 CSV 文件路径")
+	thresholdKB := flag.Int("threshold", 3, "大 Key 阈值(单位：KB), 默认:3")
+	maxKeys := flag.Int("max", 10000, "最多记录的大 Key 数量, 默认:10000")
+
+	flag.Parse()
+
+	if *inputFile == "" {
+		fmt.Println("请输入 RDB 文件路径")
+		fmt.Println("用法: rdb-analyzer -input <rdb文件> -output <输出文件>")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	// 验证文件存在
+	if _, err := os.Stat(*inputFile); os.IsNotExist(err) {
+		log.Fatalf("RDB 文件不存在: %s", *inputFile)
+	}
+
+	if *outputFile == "" {
+		*outputFile = strings.TrimSuffix(*inputFile, ".rdb") + "_analysis.csv"
+	}
+
+	if *thresholdKB < 0 {
+		log.Fatalf("阈值不能小于0")
+	}
+
 	// 配置参数
 	config := Config{
-		InputFile:    "/data/dump.rdb",    // 输入 RDB 文件路径
-		OutputFile:   "/data/bigkeys.csv", // 输出文件路径
-		ThresholdKB:  3,                   // 3KB 阈值
-		MaxKeys:      1000000,             // 最多记录的大 Key 数量, 我打算先找出top 100w 的
-		ShowProgress: true,                // 显示进度
+		InputFile:    *inputFile,   // 输入 RDB 文件路径
+		OutputFile:   *outputFile,  // 输出文件路径
+		ThresholdKB:  *thresholdKB, // 阈值
+		MaxKeys:      *maxKeys,     // 最多记录的大 Key 数量, 我打算先找出top 100w 的
+		ShowProgress: true,         // 显示进度
 	}
 
 	// 创建分析器
@@ -327,6 +356,10 @@ func main() {
 
 	// 开始分析
 	fmt.Println("开始流式分析RDB文件...")
+
+	// 记录开始时间
+	startTime := time.Now()
+
 	if err := analyzer.Analyze(); err != nil {
 		log.Fatalf("分析失败: %v", err)
 	}
@@ -335,6 +368,10 @@ func main() {
 	if err := analyzer.SaveResults(); err != nil {
 		log.Fatalf("保存结果失败: %v", err)
 	}
+
+	// 统计耗时情况
+	elapsed := time.Since(startTime)
+	log.Printf("分析完成! 耗时: %v", elapsed)
 
 	// 打印摘要
 	analyzer.PrintSummary()
