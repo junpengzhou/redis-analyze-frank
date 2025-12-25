@@ -14,7 +14,7 @@ type Config struct {
 	FlameOutput   string
 	FlameDepth    int
 	FlameMinValue int64
-	FlameFormat   string // "json", "collapsed", "csv"
+	FlameFormat   string // "json", "folded", "csv"
 	Separator     string
 	GroupByType   bool
 }

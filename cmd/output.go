@@ -116,13 +116,13 @@ func (s *StreamAnalyzer) SavePrefixResults(outputFile string) error {
 func (s *StreamAnalyzer) SaveFlameResults(outputFile string) error {
 	if s.FlameFormat == "json" {
 		return s.saveFlameJson(outputFile)
-	} else if s.FlameFormat == "collapsed" {
+	} else if s.FlameFormat == "folded" {
 		return s.saveFlameCollapsed(outputFile)
 	} else if s.FlameFormat == "csv" {
 		return s.saveFlameCSV(outputFile)
 	}
-
-	return fmt.Errorf("不支持的火焰图格式: %s", s.FlameFormat)
+	// 默认采用折叠格式保存
+	return s.saveFlameCollapsed(outputFile)
 }
 
 // 获取排序后的前缀统计

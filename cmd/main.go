@@ -21,7 +21,7 @@ func main() {
 	topN := flag.Int("topn", 100, "前缀分析的TopN数量, 默认:100")
 	flameDepth := flag.Int("flame-depth", 5, "火焰图分析的最大深度, 默认:5")
 	flameMinValue := flag.Int64("flame-min", 1024, "火焰图分析的最小值(字节), 默认:1024(1KB)")
-	flameFormat := flag.String("flame-format", "json", "火焰图输出格式: json, collapsed, csv, 默认:json")
+	flameFormat := flag.String("flame-format", "folded", "火焰图输出格式: json, folded, csv, 默认:folded")
 	separator := flag.String("separator", ":", "键分隔符, 默认:':'")
 	groupByType := flag.Bool("group-by-type", false, "按数据类型分组火焰图")
 	skipErrors := flag.Bool("skip-errors", true, "遇到错误时跳过而不是停止")
@@ -66,10 +66,10 @@ func main() {
 
 	// 验证火焰图格式
 	validFlameFormats := map[string]bool{
-		"json": true, "collapsed": true, "csv": true,
+		"json": true, "folded": true, "csv": true,
 	}
 	if !validFlameFormats[*flameFormat] {
-		log.Fatalf("无效的火焰图格式: %s，必须是 json, collapsed 或 csv", *flameFormat)
+		log.Fatalf("无效的火焰图格式: %s，必须是 json, folded 或 csv", *flameFormat)
 	}
 
 	// 设置输出文件默认值
