@@ -6,14 +6,74 @@ import (
 )
 
 // 更新前缀统计
+// updatePrefixStats 更新前缀统计 - 使用预定义前缀
 func (s *StreamAnalyzer) updatePrefixStats(analysis KeyAnalysis) {
 	dbIndex := analysis.Database
-	key := analysis.Key
 
 	// 初始化数据库的前缀统计 map
 	if _, exists := s.prefixStatsByDB[dbIndex]; !exists {
 		s.prefixStatsByDB[dbIndex] = make(map[string]*PrefixStat)
 	}
+
+	// 如果配置了前缀管理器，使用预定义前缀匹配
+	if s.PrefixConfigManager != nil {
+		s.updatePrefixStatsWithConfiguredPrefix(analysis)
+	} else {
+		// 使用原有的分隔符方式
+		s.updatePrefixStatsWithSeparator(analysis)
+	}
+}
+
+// 使用预定义前缀进行统计
+func (s *StreamAnalyzer) updatePrefixStatsWithConfiguredPrefix(analysis KeyAnalysis) {
+	dbIndex := analysis.Database
+	key := analysis.Key
+
+	// 匹配预定义前缀
+	matchedPrefix, found := s.PrefixConfigManager.MatchPrefix(key)
+	if !found {
+		// 如果没有匹配到预定义前缀，可以选择跳过或使用默认分隔符方式
+		return
+	}
+
+	// 更新全局前缀统计
+	globalKey := fmt.Sprintf("%d:%s", dbIndex, matchedPrefix)
+	if stat, exists := s.prefixStats[globalKey]; exists {
+		stat.Size += analysis.Size
+		stat.Count++
+		stat.AvgSize = float64(stat.Size) / float64(stat.Count)
+	} else {
+		s.prefixStats[globalKey] = &PrefixStat{
+			Prefix:   matchedPrefix,
+			Depth:    0, // 对于预定义前缀,固定配置0即可,因为不应该截取
+			Size:     analysis.Size,
+			Count:    1,
+			Database: dbIndex,
+			AvgSize:  float64(analysis.Size),
+		}
+	}
+
+	// 更新数据库内前缀统计
+	if stat, exists := s.prefixStatsByDB[dbIndex][matchedPrefix]; exists {
+		stat.Size += analysis.Size
+		stat.Count++
+		stat.AvgSize = float64(stat.Size) / float64(stat.Count)
+	} else {
+		s.prefixStatsByDB[dbIndex][matchedPrefix] = &PrefixStat{
+			Prefix:   matchedPrefix,
+			Depth:    0,
+			Size:     analysis.Size,
+			Count:    1,
+			Database: dbIndex,
+			AvgSize:  float64(analysis.Size),
+		}
+	}
+}
+
+// 使用分隔符进行统计（保留原有功能）
+func (s *StreamAnalyzer) updatePrefixStatsWithSeparator(analysis KeyAnalysis) {
+	dbIndex := analysis.Database
+	key := analysis.Key
 
 	// 将 key 按分隔符分割
 	parts := s.splitKey(key)

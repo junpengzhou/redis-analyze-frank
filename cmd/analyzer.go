@@ -7,20 +7,21 @@ import (
 // StreamAnalyzer 流式分析器
 type StreamAnalyzer struct {
 	Config
-	totalKeys        int
-	bigKeys          []KeyAnalysis
-	prefixStats      map[string]*PrefixStat
-	prefixStatsByDB  map[int]map[string]*PrefixStat
-	flameRoot        *FlameNode
-	flameStats       map[string]int64 // 用于快速查找的平面映射
-	flameStatsByType map[string]map[string]int64
-	startTime        time.Time
-	bytesRead        int64
-	fileSize         int64
-	errorCount       int
-	skippedKeys      int
-	totalSize        int64
-	keyTypes         map[string]int
+	PrefixConfigManager *PrefixConfigManager
+	totalKeys           int
+	bigKeys             []KeyAnalysis
+	prefixStats         map[string]*PrefixStat
+	prefixStatsByDB     map[int]map[string]*PrefixStat
+	flameRoot           *FlameNode
+	flameStats          map[string]int64 // 用于快速查找的平面映射
+	flameStatsByType    map[string]map[string]int64
+	startTime           time.Time
+	bytesRead           int64
+	fileSize            int64
+	errorCount          int
+	skippedKeys         int
+	totalSize           int64
+	keyTypes            map[string]int
 }
 
 func NewStreamAnalyzer(config Config) *StreamAnalyzer {

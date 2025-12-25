@@ -22,6 +22,7 @@ func main() {
 	flameDepth := flag.Int("flame-depth", 5, "火焰图分析的最大深度, 默认:5")
 	flameMinValue := flag.Int64("flame-min", 1024, "火焰图分析的最小值(字节), 默认:1024(1KB)")
 	flameFormat := flag.String("flame-format", "folded", "火焰图输出格式: json, folded, csv, 默认:folded")
+	prefixConfigFile := flag.String("prefix-config", "", "前缀配置文件路径 (JSON格式)")
 	separator := flag.String("separator", ":", "键分隔符, 默认:':'")
 	groupByType := flag.Bool("group-by-type", false, "按数据类型分组火焰图")
 	skipErrors := flag.Bool("skip-errors", true, "遇到错误时跳过而不是停止")
@@ -43,10 +44,11 @@ func main() {
 		fmt.Println("  -flame-depth <深度>   火焰图最大深度(默认:5)")
 		fmt.Println("  -flame-min <字节>     火焰图最小值(默认:1024)")
 		fmt.Println("  -flame-format <格式>  输出格式: json, collapsed, csv (默认:json)")
-		fmt.Println("  -group-by-type        按数据类型分组火焰图")
+		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
+		fmt.Println("  -group-by-type       按数据类型分组火焰图")
 		fmt.Println("\n通用参数:")
 		fmt.Println("  -separator <字符>     键分隔符(默认:':')")
-		fmt.Println("  -skip-errors          跳过错误继续处理(默认:true)")
+		fmt.Println("  -skip-errors         跳过错误继续处理(默认:true)")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -131,6 +133,16 @@ func main() {
 
 	// 创建分析器
 	analyzer := NewStreamAnalyzer(config)
+
+	// 如果指定了前缀配置文件，则加载配置
+	if *prefixConfigFile != "" {
+		prefixManager, err := NewPrefixConfigManager(*prefixConfigFile)
+		if err != nil {
+			log.Fatalf("加载前缀配置失败: %v", err)
+		}
+		analyzer.PrefixConfigManager = prefixManager
+		fmt.Printf("已加载前缀配置文件: %s，包含 %d 个前缀\n", *prefixConfigFile, len(prefixManager.GetAllPrefixes()))
+	}
 
 	// 记录开始时间
 	startTime := time.Now()
