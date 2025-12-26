@@ -78,6 +78,6 @@
 # 四、使用 Unlinker 进行解除挂载
 
 ```shell
-./unlinker -password 'Wejoinfx!@#135246' -pattern 'rebate:customerLogin*'
+./unlinker -password 'xxxx' -pattern 'xxx:xxx'
 ```
 
