@@ -38,6 +38,7 @@ func main() {
 		fmt.Println("\n前缀分析参数:")
 		fmt.Println("  -prefix-output <文件> 前缀输出文件路径")
 		fmt.Println("  -prefix-depth <深度>  前缀分析最大深度(默认:3)")
+		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
 		fmt.Println("  -topn <数量>          输出前N个前缀(默认:100)")
 		fmt.Println("\n火焰图分析参数:")
 		fmt.Println("  -flame-output <文件>  火焰图输出文件路径")
