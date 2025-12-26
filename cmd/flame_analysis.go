@@ -19,14 +19,9 @@ func (s *StreamAnalyzer) updateFlameStats(analysis KeyAnalysis) {
 
 	// 如果有配置的前缀管理器，优先使用预定义前缀
 	if s.PrefixConfigManager != nil {
-		matchedPrefix, found := s.PrefixConfigManager.MatchPrefix(key)
-		if found {
-			// 使用匹配的预定义前缀构建火焰图路径
-			flamePath = s.buildFlamePathWithConfiguredPrefix(dbIndex, matchedPrefix, analysis)
-		} else {
-			// 如果没有匹配到预定义前缀，使用分隔符方式
-			flamePath = s.buildFlamePathWithSeparator(dbIndex, key, analysis)
-		}
+		matchedPrefix := s.PrefixConfigManager.MatchPrefix(key)
+		// 使用匹配的预定义前缀构建火焰图路径
+		flamePath = s.buildFlamePathWithConfiguredPrefix(dbIndex, matchedPrefix, analysis)
 	} else {
 		// 使用原有的分隔符方式
 		flamePath = s.buildFlamePathWithSeparator(dbIndex, key, analysis)

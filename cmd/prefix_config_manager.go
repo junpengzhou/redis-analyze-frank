@@ -61,17 +61,17 @@ func (p *PrefixConfigManager) loadConfig(configFile string) error {
 }
 
 // MatchPrefix 匹配前缀，返回匹配到的前缀和是否匹配成功
-func (p *PrefixConfigManager) MatchPrefix(key string) (string, bool) {
+func (p *PrefixConfigManager) MatchPrefix(key string) string {
 	upperKey := strings.ToUpper(key)
 
 	// 从长到短遍历前缀，找到第一个匹配的
 	for _, prefix := range p.sortedPrefixes {
 		if strings.HasPrefix(upperKey, prefix) {
-			return prefix, true
+			return prefix
 		}
 	}
-
-	return "", false
+	// 没有匹配到同一归类到其他类型中
+	return "Others"
 }
 
 // GetAllPrefixes 获取所有前缀

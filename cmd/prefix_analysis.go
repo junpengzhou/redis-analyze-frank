@@ -30,11 +30,7 @@ func (s *StreamAnalyzer) updatePrefixStatsWithConfiguredPrefix(analysis KeyAnaly
 	key := analysis.Key
 
 	// 匹配预定义前缀
-	matchedPrefix, found := s.PrefixConfigManager.MatchPrefix(key)
-	if !found {
-		// 如果没有匹配到预定义前缀，可以选择跳过或使用默认分隔符方式
-		return
-	}
+	matchedPrefix := s.PrefixConfigManager.MatchPrefix(key)
 
 	// 更新全局前缀统计
 	globalKey := fmt.Sprintf("%d:%s", dbIndex, matchedPrefix)
