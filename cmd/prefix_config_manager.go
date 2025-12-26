@@ -66,6 +66,24 @@ func (p *PrefixConfigManager) loadConfig(configFile string) error {
 		p.prefixSet[strings.ToUpper(prefix)] = true
 	}
 
+	// 使用临时 map 进行去重，还是java和python好，去重这个要写好多代码...无语子
+	uniquePrefixes := make(map[string]bool)
+	var deduplicatedPrefixes []string
+
+	// 都转为大写然后比对是否有重复
+	for _, prefix := range prefixes {
+		upperPrefix := strings.ToUpper(prefix)
+		if !uniquePrefixes[upperPrefix] {
+			uniquePrefixes[upperPrefix] = true
+			deduplicatedPrefixes = append(deduplicatedPrefixes, upperPrefix)
+		}
+	}
+
+	// 构建前缀集合
+	for _, prefix := range deduplicatedPrefixes {
+		p.prefixSet[prefix] = true
+	}
+
 	// 按长度从长到短排序
 	p.sortedPrefixes = make([]string, 0, len(prefixes))
 	for _, prefix := range prefixes {
