@@ -33,7 +33,7 @@ func main() {
 		fmt.Println("请输入 RDB 文件路径")
 		fmt.Println("用法: rdb-analyzer -input <rdb文件> [-mode <bigkey|prefix|flame|both|all>]")
 		fmt.Println("\n大Key分析参数:")
-		fmt.Println("  -output <文件>       输出文件路径")
+		fmt.Println("  -output <文件>        输出文件路径")
 		fmt.Println("  -threshold <KB>      大Key阈值(默认:3KB)")
 		fmt.Println("\n前缀分析参数:")
 		fmt.Println("  -prefix-output <文件> 前缀输出文件路径")
