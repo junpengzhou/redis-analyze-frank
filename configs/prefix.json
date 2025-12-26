@@ -483,6 +483,7 @@
   "crm:config",
   "COMMISSION:SERVICE-USER:LOGIN",
   "CRM:LOGIN_INFO:LOGIN",
+  "REBATE:TICKET",
   "rebate:customerLogin",
   "v1:rebate:customerLogin",
   "APP_LEAVE:",
