@@ -1,4 +1,4 @@
-# 用法 Help
+# 一、用法 Help
 
 ```plaintext
 请输入 RDB 文件路径
@@ -57,13 +57,13 @@
         前缀分析的TopN数量, 默认:100 (default 100)
 ```
 
-# 使用设定内的前缀进行前缀分析的方式
+# 二、使用设定内的前缀进行前缀分析的方式
 
 ```shell
 ./build/frank -input /data/dump/dump.rdb -mode prefix -topn 0 -prefix-config ./configs/prefix.json -prefix-depth 0
 ```
 
-# 使用设定内的前缀进行火焰图分析的方式
+# 三、使用设定内的前缀进行火焰图分析的方式
 
 ```shell
 ./build/frank -input /data/dump/dump.rdb -mode flame -topn 0 \
@@ -74,3 +74,10 @@
   -flame-min  1024 \
   -flame-format folded
 ```
+
+# 四、使用 Unlinker 进行解除挂载
+
+```shell
+./unlinker -password 'Wejoinfx!@#135246' -pattern 'rebate:customerLogin*'
+```
+
