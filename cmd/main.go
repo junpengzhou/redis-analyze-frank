@@ -44,7 +44,7 @@ func main() {
 		fmt.Println("  -flame-output <文件>  火焰图输出文件路径")
 		fmt.Println("  -flame-depth <深度>   火焰图最大深度(默认:5)")
 		fmt.Println("  -flame-min <字节>     火焰图最小值(默认:1024)")
-		fmt.Println("  -flame-format <格式>  输出格式: json, collapsed, csv (默认:json)")
+		fmt.Println("  -flame-format <格式>  输出格式: json, folded, csv (默认:folded)")
 		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
 		fmt.Println("  -group-by-type       按数据类型分组火焰图")
 		fmt.Println("\n通用参数:")

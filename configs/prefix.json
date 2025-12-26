@@ -480,5 +480,9 @@
   "SIMULATE:TRADE:GROUP_INFO:REFERENCE_SET",
   "SIMULATE:TRADE:SYMBOLS:TRADE_TIME",
   "SIMULATE:TRADE:LEVER:INFO",
-  "crm:config"
+  "crm:config",
+  "COMMISSION:SERVICE-USER:LOGIN",
+  "CRM:LOGIN_INFO:LOGIN",
+  "rebate:customerLogin",
+  "v1:rebate:customerLogin"
 ]
