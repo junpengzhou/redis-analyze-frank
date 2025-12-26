@@ -29,6 +29,25 @@ func NewPrefixConfigManager(configFile string) (*PrefixConfigManager, error) {
 	return manager, nil
 }
 
+// MatchPrefix 匹配前缀，返回匹配到的前缀和是否匹配成功
+func (p *PrefixConfigManager) MatchPrefix(key string) string {
+	upperKey := strings.ToUpper(key)
+
+	// 从长到短遍历前缀，找到第一个匹配的
+	for _, prefix := range p.sortedPrefixes {
+		if strings.HasPrefix(upperKey, prefix) {
+			return prefix
+		}
+	}
+	// 没有匹配到同一归类到其他类型中
+	return "Others"
+}
+
+// GetAllPrefixes 获取所有前缀
+func (p *PrefixConfigManager) GetAllPrefixes() []string {
+	return p.sortedPrefixes
+}
+
 // loadConfig 加载配置文件
 func (p *PrefixConfigManager) loadConfig(configFile string) error {
 	data, err := os.ReadFile(configFile)
@@ -58,23 +77,4 @@ func (p *PrefixConfigManager) loadConfig(configFile string) error {
 	})
 
 	return nil
-}
-
-// MatchPrefix 匹配前缀，返回匹配到的前缀和是否匹配成功
-func (p *PrefixConfigManager) MatchPrefix(key string) string {
-	upperKey := strings.ToUpper(key)
-
-	// 从长到短遍历前缀，找到第一个匹配的
-	for _, prefix := range p.sortedPrefixes {
-		if strings.HasPrefix(upperKey, prefix) {
-			return prefix
-		}
-	}
-	// 没有匹配到同一归类到其他类型中
-	return "Others"
-}
-
-// GetAllPrefixes 获取所有前缀
-func (p *PrefixConfigManager) GetAllPrefixes() []string {
-	return p.sortedPrefixes
 }
