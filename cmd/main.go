@@ -94,26 +94,6 @@ func main() {
 		}
 	}
 
-	if *thresholdKB < 0 {
-		log.Fatalf("阈值不能小于0")
-	}
-
-	if *prefixDepth <= 0 {
-		log.Fatalf("前缀深度必须大于0")
-	}
-
-	if *topN <= 0 {
-		log.Fatalf("topn必须大于0")
-	}
-
-	if *flameDepth <= 0 {
-		log.Fatalf("火焰图深度必须大于0")
-	}
-
-	if *flameMinValue < 0 {
-		log.Fatalf("火焰图最小值不能小于0")
-	}
-
 	// 配置参数
 	config := Config{
 		InputFile:     *inputFile,
