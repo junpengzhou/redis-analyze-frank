@@ -20,7 +20,6 @@
   -flame-min <字节>     火焰图最小值(默认:1024)
   -flame-format <格式>  输出格式: json, folded, csv (默认:folded)
   -prefix-config <文件> 前缀配置文件路径 (JSON格式)
-  -group-by-type       按数据类型分组火焰图
 
 通用参数:
   -separator <字符>     键分隔符(默认:':')
@@ -33,8 +32,6 @@
         火焰图分析的最小值(字节), 默认:1024(1KB) (default 1024)
   -flame-output string
         输出文件路径 (火焰图分析)
-  -group-by-type
-        按数据类型分组火焰图
   -input string
         输入 RDB 文件路径
   -mode string

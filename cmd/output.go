@@ -313,11 +313,6 @@ func (s *StreamAnalyzer) saveFlameCSV(outputFile string) error {
 					db, _ = strconv.Atoi(dbPart[:idx])
 					keyType = dbPart[idx+1:]
 				}
-			} else if s.GroupByType && len(parts) >= 2 {
-				// 格式: db0/string/key1/key2
-				dbPart := strings.TrimPrefix(parts[0], "db")
-				db, _ = strconv.Atoi(dbPart)
-				keyType = parts[1]
 			}
 		}
 

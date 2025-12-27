@@ -24,7 +24,6 @@ func main() {
 	flameFormat := flag.String("flame-format", "folded", "火焰图输出格式: json, folded, csv, 默认:folded")
 	prefixConfigFile := flag.String("prefix-config", "", "前缀配置文件路径 (JSON格式)")
 	separator := flag.String("separator", ":", "键分隔符, 默认:':'")
-	groupByType := flag.Bool("group-by-type", false, "按数据类型分组火焰图")
 	skipErrors := flag.Bool("skip-errors", true, "遇到错误时跳过而不是停止")
 
 	flag.Parse()
@@ -46,7 +45,6 @@ func main() {
 		fmt.Println("  -flame-min <字节>     火焰图最小值(默认:1024)")
 		fmt.Println("  -flame-format <格式>  输出格式: json, folded, csv (默认:folded)")
 		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
-		fmt.Println("  -group-by-type       按数据类型分组火焰图")
 		fmt.Println("\n通用参数:")
 		fmt.Println("  -separator <字符>     键分隔符(默认:':')")
 		fmt.Println("  -skip-errors         跳过错误继续处理(默认:true)")
@@ -109,7 +107,6 @@ func main() {
 		FlameMinValue: *flameMinValue,
 		FlameFormat:   *flameFormat,
 		Separator:     *separator,
-		GroupByType:   *groupByType,
 	}
 
 	// 创建分析器
