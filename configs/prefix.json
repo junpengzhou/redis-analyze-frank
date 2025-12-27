@@ -838,5 +838,6 @@
   "LuckyTurningMail",
   "COUNTRY",
   "WALLET",
-  "POINTS"
+  "POINTS",
+  "CRM:SIMULATE"
 ]
