@@ -43,7 +43,12 @@ func (p *PrefixConfigManager) MatchPrefix(key string) string {
 	// 没有匹配到同一归类到其他类型中,改成其他类型拼上第一个:往前的值,组成变更Others:abc这样的格式
 	parts := strings.Split(upperKey, ":")
 	if len(parts) > 0 {
-		return "Others:" + parts[0]
+		var prefixParts []string
+		// 字典外的，最多只展示前两层即可
+		for i := 0; i < 2 && i < len(parts); i++ {
+			prefixParts = append(prefixParts, parts[i])
+		}
+		return "Others:" + strings.Join(prefixParts, ":")
 	}
 	return "Others"
 }
