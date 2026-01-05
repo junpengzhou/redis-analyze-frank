@@ -854,5 +854,6 @@
   "WALLET",
   "POINTS",
   "CRM:SIMULATE",
-  "ACTIVITY2025"
+  "ACTIVITY2025",
+  "appSendLock:"
 ]
