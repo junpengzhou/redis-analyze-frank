@@ -67,7 +67,7 @@ func (s *StreamAnalyzer) Analyze() error {
 		}
 
 		// 前缀分析
-		if s.Mode == "prefix" || s.Mode == "both" || s.Mode == "all" {
+		if s.Mode == "prefix" || s.Mode == "spec" || s.Mode == "both" || s.Mode == "all" {
 			s.updatePrefixStats(analysis)
 		}
 
