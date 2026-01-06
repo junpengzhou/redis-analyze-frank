@@ -855,5 +855,12 @@
   "POINTS",
   "CRM:SIMULATE",
   "ACTIVITY2025",
-  "appSendLock:"
+  "appSendLock:",
+  "REFRESH_AUTH:",
+  "CLIENT_ID_TO_ACCESS:",
+  "REFRESH:",
+  "ACCESS:",
+  "REFRESH_TO_ACCESS:",
+  "ACCESS_TO_REFRESH:",
+  "ActStrategicStrategy:"
 ]
