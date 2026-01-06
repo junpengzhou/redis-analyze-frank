@@ -15,10 +15,11 @@ func main() {
 	outputFile := flag.String("output", "", "输出 CSV 文件路径 (大Key分析)")
 	prefixOutputFile := flag.String("prefix-output", "", "输出 CSV 文件路径 (前缀分析)")
 	flameOutputFile := flag.String("flame-output", "", "输出文件路径 (火焰图分析)")
-	mode := flag.String("mode", "all", "分析模式: bigkey, prefix, flame, both, all")
+	mode := flag.String("mode", "all", "分析模式: bigkey, prefix, flame, both, all, spec")
 	thresholdKB := flag.Int("threshold", 3, "大 Key 阈值(单位：KB), 默认:3")
 	prefixDepth := flag.Int("prefix-depth", 3, "前缀分析的最大深度, 默认:3")
 	topN := flag.Int("topn", 100, "前缀分析的TopN数量, 默认:100")
+	specKey := flag.String("spec-prefix", "", "前缀匹配直接显示模式，指定的前缀")
 	flameDepth := flag.Int("flame-depth", 5, "火焰图分析的最大深度, 默认:5")
 	flameMinValue := flag.Int64("flame-min", 1024, "火焰图分析的最小值(字节), 默认:1024(1KB)")
 	flameFormat := flag.String("flame-format", "folded", "火焰图输出格式: json, folded, csv, 默认:folded")
@@ -30,22 +31,26 @@ func main() {
 
 	if *inputFile == "" {
 		fmt.Println("请输入 RDB 文件路径")
-		fmt.Println("用法: rdb-analyzer -input <rdb文件> [-mode <bigkey|prefix|flame|both|all>]")
-		fmt.Println("\n大Key分析参数:")
+		fmt.Println("用法: rdb-analyzer -input <rdb文件> [-mode <bigkey|prefix|flame|spec|both|all>]")
+		fmt.Println("\n(bigkey)大Key分析参数:")
 		fmt.Println("  -output <文件>        输出文件路径")
 		fmt.Println("  -threshold <KB>      大Key阈值(默认:3KB)")
-		fmt.Println("\n前缀分析参数:")
+		fmt.Println("\n(prefix)前缀分析参数:")
 		fmt.Println("  -prefix-output <文件> 前缀输出文件路径")
 		fmt.Println("  -prefix-depth <深度>  前缀分析最大深度(默认:3)")
 		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
 		fmt.Println("  -topn <数量>          输出前N个前缀(默认:100)")
-		fmt.Println("\n火焰图分析参数:")
+		fmt.Println("\n(spec)指定分析参数:")
+		fmt.Println("  -prefix-output <文件> 前缀输出文件路径")
+		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
+		fmt.Println("  -spec-prefix  <前缀>  前缀")
+		fmt.Println("\n(flame)火焰图分析参数:")
 		fmt.Println("  -flame-output <文件>  火焰图输出文件路径")
 		fmt.Println("  -flame-depth <深度>   火焰图最大深度(默认:5)")
 		fmt.Println("  -flame-min <字节>     火焰图最小值(默认:1024)")
 		fmt.Println("  -flame-format <格式>  输出格式: json, folded, csv (默认:folded)")
 		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
-		fmt.Println("\n通用参数:")
+		fmt.Println("\n(common)通用参数:")
 		fmt.Println("  -separator <字符>     键分隔符(默认:':')")
 		fmt.Println("  -skip-errors         跳过错误继续处理(默认:true)")
 		flag.PrintDefaults()
@@ -59,7 +64,12 @@ func main() {
 
 	// 验证模式参数
 	validModes := map[string]bool{
-		"bigkey": true, "prefix": true, "flame": true, "both": true, "all": true,
+		"bigkey": true,
+		"prefix": true,
+		"spec":   true,
+		"flame":  true,
+		"both":   true,
+		"all":    true,
 	}
 	if !validModes[*mode] {
 		log.Fatalf("无效的模式: %s，必须是 bigkey, prefix, flame, both 或 all", *mode)
@@ -80,7 +90,7 @@ func main() {
 		}
 	}
 
-	if *mode == "prefix" || *mode == "both" || *mode == "all" {
+	if *mode == "prefix" || *mode == "both" || *mode == "spec" || *mode == "all" {
 		if *prefixOutputFile == "" {
 			*prefixOutputFile = strings.TrimSuffix(*inputFile, ".rdb") + "_prefix.csv"
 		}
@@ -98,6 +108,7 @@ func main() {
 		OutputFile:    *outputFile,
 		ThresholdKB:   *thresholdKB,
 		PrefixDepth:   *prefixDepth,
+		SpecKey:       *specKey,
 		TopN:          *topN,
 		ShowProgress:  true,
 		SkipErrors:    *skipErrors,
@@ -138,7 +149,7 @@ func main() {
 		fmt.Printf("大Key分析结果已保存到: %s\n", config.OutputFile)
 	}
 
-	if config.Mode == "prefix" || config.Mode == "both" || config.Mode == "all" {
+	if config.Mode == "prefix" || config.Mode == "spec" || config.Mode == "both" || config.Mode == "all" {
 		if err := analyzer.SavePrefixResults(*prefixOutputFile); err != nil {
 			log.Fatalf("保存前缀分析结果失败: %v", err)
 		}
