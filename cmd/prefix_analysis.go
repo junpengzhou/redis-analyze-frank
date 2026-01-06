@@ -30,7 +30,19 @@ func (s *StreamAnalyzer) updatePrefixStats(analysis KeyAnalysis) {
 // updateSpecStatsWithConfiguredPrefix 使用指定前缀进行统计
 func (s *StreamAnalyzer) updateSpecStatsWithConfiguredPrefix(analysis KeyAnalysis) {
 	dbIndex := analysis.Database
+
+	// 原始KEY，该模式下是使用原始KEY进行统计的
 	key := analysis.Key
+
+	upperKey := strings.ToUpper(key)
+
+	// 指定的 Key 前缀
+	specKey := strings.ToUpper(s.Config.SpecKey)
+
+	// 如果不匹配的就忽略掉
+	if !strings.HasPrefix(upperKey, specKey) {
+		return
+	}
 
 	// 更新全局前缀统计
 	if stat, exists := s.prefixStats[key]; exists {
