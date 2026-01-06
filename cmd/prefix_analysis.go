@@ -15,8 +15,11 @@ func (s *StreamAnalyzer) updatePrefixStats(analysis KeyAnalysis) {
 		s.prefixStatsByDB[dbIndex] = make(map[string]*PrefixStat)
 	}
 
-	// 如果配置了前缀管理器，使用预定义前缀匹配
-	if s.PrefixConfigManager != nil {
+	if s.Config.SpecKey != "" {
+		// 指定 Key 模式，走指定Key的统计记录方式
+		s.updateSpecStatsWithConfiguredPrefix(analysis)
+	} else if s.PrefixConfigManager != nil {
+		// 如果配置了前缀管理器，使用预定义前缀匹配
 		s.updatePrefixStatsWithConfiguredPrefix(analysis)
 	} else {
 		// 使用原有的分隔符方式
@@ -24,7 +27,45 @@ func (s *StreamAnalyzer) updatePrefixStats(analysis KeyAnalysis) {
 	}
 }
 
-// 使用预定义前缀进行统计
+// updateSpecStatsWithConfiguredPrefix 使用指定前缀进行统计
+func (s *StreamAnalyzer) updateSpecStatsWithConfiguredPrefix(analysis KeyAnalysis) {
+	dbIndex := analysis.Database
+	key := analysis.Key
+
+	// 更新全局前缀统计
+	if stat, exists := s.prefixStats[key]; exists {
+		stat.Size += analysis.Size
+		stat.Count++
+		stat.AvgSize = float64(stat.Size) / float64(stat.Count)
+	} else {
+		s.prefixStats[key] = &PrefixStat{
+			Prefix:   key,
+			Depth:    0,
+			Size:     analysis.Size,
+			Count:    1,
+			Database: dbIndex,
+			AvgSize:  float64(analysis.Size),
+		}
+	}
+
+	// 更新数据库内前缀统计
+	if stat, exists := s.prefixStatsByDB[dbIndex][key]; exists {
+		stat.Size += analysis.Size
+		stat.Count++
+		stat.AvgSize = float64(stat.Size) / float64(stat.Count)
+	} else {
+		s.prefixStatsByDB[dbIndex][key] = &PrefixStat{
+			Prefix:   key,
+			Depth:    0,
+			Size:     analysis.Size,
+			Count:    1,
+			Database: dbIndex,
+			AvgSize:  float64(analysis.Size),
+		}
+	}
+}
+
+// updatePrefixStatsWithConfiguredPrefix 使用预定义前缀进行统计
 func (s *StreamAnalyzer) updatePrefixStatsWithConfiguredPrefix(analysis KeyAnalysis) {
 	dbIndex := analysis.Database
 	key := analysis.Key
@@ -66,7 +107,7 @@ func (s *StreamAnalyzer) updatePrefixStatsWithConfiguredPrefix(analysis KeyAnaly
 	}
 }
 
-// 使用分隔符进行统计（保留原有功能）
+// updatePrefixStatsWithSeparator 使用分隔符进行统计（保留原有功能）
 func (s *StreamAnalyzer) updatePrefixStatsWithSeparator(analysis KeyAnalysis) {
 	dbIndex := analysis.Database
 	key := analysis.Key
