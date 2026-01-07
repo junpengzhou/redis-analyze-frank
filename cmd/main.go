@@ -163,7 +163,7 @@ func main() {
 	}
 
 	if config.Mode == "spec" || config.Mode == "both" || config.Mode == "all" {
-		if err := analyzer.SavePrefixResults(*prefixOutputFile); err != nil {
+		if err := analyzer.SaveSpecResults(*prefixOutputFile); err != nil {
 			log.Fatalf("保存指定分析结果失败: %v", err)
 		}
 		fmt.Printf("指定分析结果已保存到: %s\n", *prefixOutputFile)

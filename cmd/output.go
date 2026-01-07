@@ -112,6 +112,52 @@ func (s *StreamAnalyzer) SavePrefixResults(outputFile string) error {
 	return nil
 }
 
+// SaveSpecResults 保存指定分析结果
+func (s *StreamAnalyzer) SaveSpecResults(outputFile string) error {
+	// 保存到 CSV 文件
+	file, err := os.Create(outputFile)
+	if err != nil {
+		return fmt.Errorf("无法创建前缀输出文件: %v", err)
+	}
+	// 关闭文件流
+	defer s.closeFile(file)
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// 写入表头
+	header := []string{
+		"database",      // 数据库
+		"key",           // KEY
+		"size_bytes",    // 大小
+		"size_readable", // 大小可读
+		"ttl",           // 过期时间
+	}
+	if err := writer.Write(header); err != nil {
+		return err
+	}
+
+	// 写入数据
+	for _, stat := range s.specStats {
+		database := strconv.Itoa(stat.Database)
+		sizeReadable := s.formatBytes(stat.Size)
+		size := strconv.FormatInt(stat.Size, 10)
+		ttl := strconv.FormatInt(stat.Ttl, 10)
+		row := []string{
+			database,     // 数据库
+			stat.Key,     // KEY
+			size,         // 大小
+			sizeReadable, // 大小可读
+			ttl,          // 过期时间
+		}
+		if err := writer.Write(row); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // SaveFlameResults 保存火焰图结果
 func (s *StreamAnalyzer) SaveFlameResults(outputFile string) error {
 	if s.FlameFormat == "json" {
