@@ -15,7 +15,7 @@ func main() {
 	outputFile := flag.String("output", "", "输出 CSV 文件路径 (大Key分析)")
 	prefixOutputFile := flag.String("prefix-output", "", "输出 CSV 文件路径 (前缀分析)")
 	flameOutputFile := flag.String("flame-output", "", "输出文件路径 (火焰图分析)")
-	mode := flag.String("mode", "all", "分析模式: bigkey, prefix, flame, both, all, spec")
+	mode := flag.String("mode", "all", "分析模式: bigkey, prefix, spec, flame, both, all")
 	thresholdKB := flag.Int("threshold", 3, "大 Key 阈值(单位：KB), 默认:3")
 	prefixDepth := flag.Int("prefix-depth", 3, "前缀分析的最大深度, 默认:3")
 	topN := flag.Int("topn", 0, "前缀分析的TopN数量, 默认:100")
@@ -31,7 +31,7 @@ func main() {
 
 	if *inputFile == "" {
 		fmt.Println("请输入 RDB 文件路径")
-		fmt.Println("用法: rdb-analyzer -input <rdb文件> [-mode <bigkey|prefix|flame|spec|both|all>]")
+		fmt.Println("用法: rdb-analyzer -input <rdb文件> [-mode <bigkey|prefix|spec|flame|both|all>]")
 		fmt.Println("\n(bigkey)大Key分析参数:")
 		fmt.Println("  -output <文件>        输出文件路径")
 		fmt.Println("  -threshold <KB>      大Key阈值(默认:3KB)")
@@ -90,9 +90,15 @@ func main() {
 		}
 	}
 
-	if *mode == "prefix" || *mode == "both" || *mode == "spec" || *mode == "all" {
+	if *mode == "prefix" || *mode == "both" || *mode == "all" {
 		if *prefixOutputFile == "" {
 			*prefixOutputFile = strings.TrimSuffix(*inputFile, ".rdb") + "_prefix.csv"
+		}
+	}
+
+	if *mode == "spec" || *mode == "both" || *mode == "all" {
+		if *prefixOutputFile == "" {
+			*prefixOutputFile = strings.TrimSuffix(*inputFile, ".rdb") + "_spec.csv"
 		}
 	}
 
@@ -149,11 +155,18 @@ func main() {
 		fmt.Printf("大Key分析结果已保存到: %s\n", config.OutputFile)
 	}
 
-	if config.Mode == "prefix" || config.Mode == "spec" || config.Mode == "both" || config.Mode == "all" {
+	if config.Mode == "prefix" || config.Mode == "both" || config.Mode == "all" {
 		if err := analyzer.SavePrefixResults(*prefixOutputFile); err != nil {
 			log.Fatalf("保存前缀分析结果失败: %v", err)
 		}
 		fmt.Printf("前缀分析结果已保存到: %s\n", *prefixOutputFile)
+	}
+
+	if config.Mode == "spec" || config.Mode == "both" || config.Mode == "all" {
+		if err := analyzer.SavePrefixResults(*prefixOutputFile); err != nil {
+			log.Fatalf("保存指定分析结果失败: %v", err)
+		}
+		fmt.Printf("指定分析结果已保存到: %s\n", *prefixOutputFile)
 	}
 
 	if config.Mode == "flame" || config.Mode == "all" {
