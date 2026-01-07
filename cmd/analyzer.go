@@ -50,6 +50,7 @@ func NewStreamAnalyzer(config Config) *StreamAnalyzer {
 		Config:          config,
 		bigKeys:         make([]KeyAnalysis, 0, 1000),
 		prefixStats:     make(map[string]*PrefixStat),
+		specStats:       make(map[string]*SpecStat),
 		prefixStatsByDB: make(map[int]map[string]*PrefixStat),
 		flameRoot: &FlameNode{
 			Name:     "root",
