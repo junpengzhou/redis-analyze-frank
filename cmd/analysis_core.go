@@ -139,7 +139,7 @@ func (s *StreamAnalyzer) getProgressInfo() string {
 		info = append(info, fmt.Sprintf("大Key: %d", len(s.bigKeys)))
 	}
 
-	if s.Mode == "prefix" || s.Mode == "both" || s.Mode == "all" {
+	if s.Mode == "prefix" || s.Mode == "spec" || s.Mode == "both" || s.Mode == "all" {
 		info = append(info, fmt.Sprintf("前缀: %d", len(s.prefixStats)))
 	}
 
