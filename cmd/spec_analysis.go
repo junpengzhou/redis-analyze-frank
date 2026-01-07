@@ -25,22 +25,11 @@ func (s *StreamAnalyzer) UpdateSpecStats(analysis KeyAnalysis) {
 	fmt.Printf("检测到前缀指定KEY: %s\n", key)
 
 	// 更新全局前缀统计
-	s.prefixStats[key] = &PrefixStat{
-		Prefix:   key,
-		Depth:    0, // 对于预定义前缀,固定配置0即可,因为不应该截取
-		Size:     analysis.Size,
-		Count:    1,
-		Database: dbIndex,
-		AvgSize:  float64(analysis.Size),
-	}
-
-	// 更新数据库内前缀统计
-	s.prefixStatsByDB[dbIndex][key] = &PrefixStat{
-		Prefix:   key,
-		Depth:    0, // 对于预定义前缀,固定配置0即可,因为不应该截取
-		Size:     analysis.Size,
-		Count:    1,
-		Database: dbIndex,
-		AvgSize:  float64(analysis.Size),
+	s.specStats[key] = &SpecStat{
+		Database: dbIndex,       // 数据库角标
+		Type:     analysis.Type, // 数据类型
+		Key:      key,           // KEY
+		Size:     analysis.Size, // 大小
+		Ttl:      analysis.TTL,  // 过期时间
 	}
 }
