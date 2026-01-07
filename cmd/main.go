@@ -18,7 +18,7 @@ func main() {
 	mode := flag.String("mode", "all", "分析模式: bigkey, prefix, flame, both, all, spec")
 	thresholdKB := flag.Int("threshold", 3, "大 Key 阈值(单位：KB), 默认:3")
 	prefixDepth := flag.Int("prefix-depth", 3, "前缀分析的最大深度, 默认:3")
-	topN := flag.Int("topn", 100, "前缀分析的TopN数量, 默认:100")
+	topN := flag.Int("topn", 0, "前缀分析的TopN数量, 默认:100")
 	specKey := flag.String("spec-prefix", "", "前缀匹配直接显示模式，指定的前缀")
 	flameDepth := flag.Int("flame-depth", 5, "火焰图分析的最大深度, 默认:5")
 	flameMinValue := flag.Int64("flame-min", 1024, "火焰图分析的最小值(字节), 默认:1024(1KB)")
