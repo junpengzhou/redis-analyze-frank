@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// 更新火焰图统计 - 支持预定义前缀
-func (s *StreamAnalyzer) updateFlameStats(analysis KeyAnalysis) {
+// UpdateFlameStats 更新火焰图统计 - 支持预定义前缀
+func (s *StreamAnalyzer) UpdateFlameStats(analysis KeyAnalysis) {
 	// 过滤小值
 	if analysis.Size < s.FlameMinValue {
 		return
