@@ -110,11 +110,15 @@ func (s *StreamAnalyzer) beforeAdbAnalyzePrint() {
 		fmt.Printf("大Key分析 | 阈值: %dKB\n", s.ThresholdKB)
 	}
 
+	if s.Mode == "spec" || s.Mode == "both" || s.Mode == "all" {
+		fmt.Printf("指定分析 | 指定Key: %s\n", s.Config.SpecKey)
+	}
+
 	if s.Mode == "prefix" || s.Mode == "both" || s.Mode == "all" {
 		fmt.Printf("前缀分析 | 最大深度: %d | TopN: %d\n", s.PrefixDepth, s.TopN)
 	}
 
-	if s.Mode == "flame" || s.Mode == "all" {
+	if s.Mode == "flame" || s.Mode == "both" || s.Mode == "all" {
 		fmt.Printf("火焰图分析 | 深度: %d | 格式: %s\n", s.FlameDepth, s.FlameFormat)
 	}
 
@@ -139,8 +143,12 @@ func (s *StreamAnalyzer) getProgressInfo() string {
 		info = append(info, fmt.Sprintf("大Key: %d", len(s.bigKeys)))
 	}
 
-	if s.Mode == "prefix" || s.Mode == "spec" || s.Mode == "both" || s.Mode == "all" {
+	if s.Mode == "prefix" || s.Mode == "both" || s.Mode == "all" {
 		info = append(info, fmt.Sprintf("前缀: %d", len(s.prefixStats)))
+	}
+
+	if s.Mode == "spec" || s.Mode == "both" || s.Mode == "all" {
+		info = append(info, fmt.Sprintf("命中: %d", len(s.prefixStats)))
 	}
 
 	if s.Mode == "flame" || s.Mode == "all" {
