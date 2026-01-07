@@ -15,7 +15,7 @@ func (s *StreamAnalyzer) UpdateSpecStats(analysis KeyAnalysis) {
 	upperKey := strings.ToUpper(key)
 
 	// 指定的 Key 前缀
-	specKey := strings.ToUpper(s.Config.SpecKey)
+	specKey := strings.ToUpper(s.Config.SpecPrefix)
 
 	// 如果不匹配的就忽略掉
 	if !strings.HasPrefix(upperKey, specKey) {

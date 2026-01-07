@@ -116,7 +116,7 @@ func (s *StreamAnalyzer) beforeAdbAnalyzePrint() {
 	}
 
 	if s.Mode == "spec" || s.Mode == "both" || s.Mode == "all" {
-		fmt.Printf("指定分析 | 指定Key: %s\n", s.Config.SpecKey)
+		fmt.Printf("指定分析 | 指定Key: %s\n", s.Config.SpecPrefix)
 	}
 
 	if s.Mode == "prefix" || s.Mode == "both" || s.Mode == "all" {

@@ -19,7 +19,8 @@ func main() {
 	thresholdKB := flag.Int("threshold", 3, "大 Key 阈值(单位：KB), 默认:3")
 	prefixDepth := flag.Int("prefix-depth", 3, "前缀分析的最大深度, 默认:3")
 	topN := flag.Int("topn", 0, "前缀分析的TopN数量, 默认:100")
-	specKey := flag.String("spec-prefix", "", "前缀匹配直接显示模式，指定的前缀")
+	specPrefix := flag.String("spec-prefix", "", "前缀匹配直接显示模式，指定的前缀")
+	specOutputFile := flag.String("spec-output", "", "输出 CSV 文件路径 (指定分析)")
 	flameDepth := flag.Int("flame-depth", 5, "火焰图分析的最大深度, 默认:5")
 	flameMinValue := flag.Int64("flame-min", 1024, "火焰图分析的最小值(字节), 默认:1024(1KB)")
 	flameFormat := flag.String("flame-format", "folded", "火焰图输出格式: json, folded, csv, 默认:folded")
@@ -41,9 +42,8 @@ func main() {
 		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
 		fmt.Println("  -topn <数量>          输出前N个前缀(默认:100)")
 		fmt.Println("\n(spec)指定分析参数:")
-		fmt.Println("  -prefix-output <文件> 前缀输出文件路径")
-		fmt.Println("  -prefix-config <文件> 前缀配置文件路径 (JSON格式)")
-		fmt.Println("  -spec-prefix  <前缀>  前缀")
+		fmt.Println("  -spec-output  <文件>  指定输出文件路径")
+		fmt.Println("  -spec-prefix  <指定>  指定前缀")
 		fmt.Println("\n(flame)火焰图分析参数:")
 		fmt.Println("  -flame-output <文件>  火焰图输出文件路径")
 		fmt.Println("  -flame-depth <深度>   火焰图最大深度(默认:5)")
@@ -97,12 +97,12 @@ func main() {
 	}
 
 	if *mode == "spec" || *mode == "both" || *mode == "all" {
-		if *prefixOutputFile == "" {
-			*prefixOutputFile = strings.TrimSuffix(*inputFile, ".rdb") + "_spec.csv"
+		if *specPrefix == "" {
+			log.Fatalf("请指定需要匹配的前缀: -spec-prefix <前缀>")
 		}
 
-		if *specKey == "" {
-			log.Fatalf("请指定前缀匹配模式: -spec-prefix <前缀>")
+		if *specOutputFile == "" {
+			*specOutputFile = strings.TrimSuffix(*inputFile, ".rdb") + "_spec.csv"
 		}
 	}
 
@@ -118,7 +118,7 @@ func main() {
 		OutputFile:    *outputFile,
 		ThresholdKB:   *thresholdKB,
 		PrefixDepth:   *prefixDepth,
-		SpecKey:       *specKey,
+		SpecPrefix:    *specPrefix,
 		TopN:          *topN,
 		ShowProgress:  true,
 		SkipErrors:    *skipErrors,
@@ -167,10 +167,10 @@ func main() {
 	}
 
 	if config.Mode == "spec" || config.Mode == "both" || config.Mode == "all" {
-		if err := analyzer.SaveSpecResults(*prefixOutputFile); err != nil {
+		if err := analyzer.SaveSpecResults(*specOutputFile); err != nil {
 			log.Fatalf("保存指定分析结果失败: %v", err)
 		}
-		fmt.Printf("指定分析结果已保存到: %s\n", *prefixOutputFile)
+		fmt.Printf("指定分析结果已保存到: %s\n", *specOutputFile)
 	}
 
 	if config.Mode == "flame" || config.Mode == "all" {

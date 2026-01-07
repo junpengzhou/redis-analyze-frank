@@ -16,7 +16,7 @@ type Config struct {
 	FlameMinValue int64
 	FlameFormat   string // "json", "folded", "csv"
 	Separator     string
-	SpecKey       string // 指定键
+	SpecPrefix    string // 指定前缀
 }
 
 // KeyAnalysis 大Key分析结果
