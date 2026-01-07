@@ -100,9 +100,13 @@ func main() {
 		if *prefixOutputFile == "" {
 			*prefixOutputFile = strings.TrimSuffix(*inputFile, ".rdb") + "_spec.csv"
 		}
+
+		if *specKey == "" {
+			log.Fatalf("请指定前缀匹配模式: -spec-prefix <前缀>")
+		}
 	}
 
-	if *mode == "flame" || *mode == "all" {
+	if *mode == "flame" || *mode == "both" || *mode == "all" {
 		if *flameOutputFile == "" {
 			*flameOutputFile = strings.TrimSuffix(*inputFile, ".rdb") + "_flame." + *flameFormat
 		}
