@@ -15,10 +15,7 @@ func (s *StreamAnalyzer) updatePrefixStats(analysis KeyAnalysis) {
 		s.prefixStatsByDB[dbIndex] = make(map[string]*PrefixStat)
 	}
 
-	if s.Config.SpecKey != "" {
-		// 指定 Key 模式，走指定Key的统计记录方式
-		s.updateSpecStatsWithConfiguredPrefix(analysis)
-	} else if s.PrefixConfigManager != nil {
+	if s.PrefixConfigManager != nil {
 		// 如果配置了前缀管理器，使用预定义前缀匹配
 		s.updatePrefixStatsWithConfiguredPrefix(analysis)
 	} else {
@@ -27,8 +24,8 @@ func (s *StreamAnalyzer) updatePrefixStats(analysis KeyAnalysis) {
 	}
 }
 
-// updateSpecStatsWithConfiguredPrefix 使用指定前缀进行统计
-func (s *StreamAnalyzer) updateSpecStatsWithConfiguredPrefix(analysis KeyAnalysis) {
+// updateSpecStats 使用指定前缀进行统计
+func (s *StreamAnalyzer) updateSpecStats(analysis KeyAnalysis) {
 	dbIndex := analysis.Database
 
 	// 原始KEY，该模式下是使用原始KEY进行统计的
@@ -44,36 +41,26 @@ func (s *StreamAnalyzer) updateSpecStatsWithConfiguredPrefix(analysis KeyAnalysi
 		return
 	}
 
+	fmt.Printf("检测到前缀指定KEY: %s\n", key)
+
 	// 更新全局前缀统计
-	if stat, exists := s.prefixStats[key]; exists {
-		stat.Size += analysis.Size
-		stat.Count++
-		stat.AvgSize = float64(stat.Size) / float64(stat.Count)
-	} else {
-		s.prefixStats[key] = &PrefixStat{
-			Prefix:   key,
-			Depth:    0,
-			Size:     analysis.Size,
-			Count:    1,
-			Database: dbIndex,
-			AvgSize:  float64(analysis.Size),
-		}
+	s.prefixStats[key] = &PrefixStat{
+		Prefix:   key,
+		Depth:    0, // 对于预定义前缀,固定配置0即可,因为不应该截取
+		Size:     analysis.Size,
+		Count:    1,
+		Database: dbIndex,
+		AvgSize:  float64(analysis.Size),
 	}
 
 	// 更新数据库内前缀统计
-	if stat, exists := s.prefixStatsByDB[dbIndex][key]; exists {
-		stat.Size += analysis.Size
-		stat.Count++
-		stat.AvgSize = float64(stat.Size) / float64(stat.Count)
-	} else {
-		s.prefixStatsByDB[dbIndex][key] = &PrefixStat{
-			Prefix:   key,
-			Depth:    0,
-			Size:     analysis.Size,
-			Count:    1,
-			Database: dbIndex,
-			AvgSize:  float64(analysis.Size),
-		}
+	s.prefixStatsByDB[dbIndex][key] = &PrefixStat{
+		Prefix:   key,
+		Depth:    0, // 对于预定义前缀,固定配置0即可,因为不应该截取
+		Size:     analysis.Size,
+		Count:    1,
+		Database: dbIndex,
+		AvgSize:  float64(analysis.Size),
 	}
 }
 
@@ -110,7 +97,7 @@ func (s *StreamAnalyzer) updatePrefixStatsWithConfiguredPrefix(analysis KeyAnaly
 	} else {
 		s.prefixStatsByDB[dbIndex][matchedPrefix] = &PrefixStat{
 			Prefix:   matchedPrefix,
-			Depth:    0,
+			Depth:    0, // 对于预定义前缀,固定配置0即可,因为不应该截取
 			Size:     analysis.Size,
 			Count:    1,
 			Database: dbIndex,

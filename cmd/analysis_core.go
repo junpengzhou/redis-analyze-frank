@@ -66,13 +66,18 @@ func (s *StreamAnalyzer) Analyze() error {
 			}
 		}
 
+		// 指定分析
+		if s.Mode == "spec" || s.Mode == "both" || s.Mode == "all" {
+			s.updateSpecStats(analysis)
+		}
+
 		// 前缀分析
-		if s.Mode == "prefix" || s.Mode == "spec" || s.Mode == "both" || s.Mode == "all" {
+		if s.Mode == "prefix" || s.Mode == "both" || s.Mode == "all" {
 			s.updatePrefixStats(analysis)
 		}
 
 		// 火焰图分析
-		if s.Mode == "flame" || s.Mode == "all" {
+		if s.Mode == "flame" || s.Mode == "both" || s.Mode == "all" {
 			s.updateFlameStats(analysis)
 		}
 
