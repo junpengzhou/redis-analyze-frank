@@ -862,5 +862,13 @@
   "ACCESS:",
   "REFRESH_TO_ACCESS:",
   "ACCESS_TO_REFRESH:",
-  "ActStrategicStrategy:"
+  "ActStrategicStrategy:",
+  "30D:appOrderComment:",
+  "30D:appOrder:",
+  "temp:MT4",
+  "temp:MT5",
+  "temp_feign:MT4",
+  "temp_feign:MT5",
+  "Activity202603TRStrategy",
+  "Activity2026041Strategy"
 ]
