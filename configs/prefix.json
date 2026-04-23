@@ -869,6 +869,17 @@
   "temp:MT5",
   "temp_feign:MT4",
   "temp_feign:MT5",
+  "ActStrategicStrategy",
+  "Activity2025011Strategy",
+  "Activity2025012Strategy",
+  "Activity2025051Strategy",
+  "Activity2025062Strategy",
+  "Activity2025101Strategy",
   "Activity202603TRStrategy",
-  "Activity2026041Strategy"
+  "Activity2026041Strategy",
+  "Activity202604TRStrategy",
+  "ActivityDemoRaceStrategy",
+  "ActivityFirstDepositStrategy",
+  "AgentReferralStrategy",
+  "ActivityStrategyDecorator"
 ]
