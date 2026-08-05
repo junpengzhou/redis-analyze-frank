@@ -885,6 +885,10 @@
   "ActivityFirstDepositStrategy",
   "AgentReferralStrategy",
   "ActivityStrategyDecorator",
+  "ActivityAnniversaryCelebrationStrategy",
+  "Activity202605TRStrategy",
+  "Activity202606TRStrategy",
+  "Activity202607TRStrategy",
   "REPEATSUBMIT_",
   "register:",
   "general:"
