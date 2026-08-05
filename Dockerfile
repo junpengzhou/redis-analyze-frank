@@ -22,7 +22,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
       -trimpath \
       -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildTime=${BUILD_TIME}" \
       -o /out/frank \
-      ./cmd
+      ./cmd/
 
 # 将输出文件赋值权限和文件计算摘要
 RUN chmod +x /out/frank && \
